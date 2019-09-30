@@ -1,0 +1,1 @@
+g++ -o oa obstacleavoidance.cpp -I/home/magnus/libraries/fuzzylite/fuzzylite -L/home/magnus/libraries/fuzzylite/fuzzylite/release/bin -lfuzzylite-static
