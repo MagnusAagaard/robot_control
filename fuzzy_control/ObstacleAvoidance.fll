@@ -2,16 +2,16 @@
 Engine: ObstacleAvoidance
 InputVariable: obstacle
   enabled: true
-  range: 0.000 1.000
-  lock-range: false
-  term: left Ramp 1.000 0.000
-  term: right Ramp 0.000 1.000
+  range: -1.000 1.000
+  lock-range: true
+  term: left Ramp -1.000 1.000
+  term: right Ramp 1.000 -1.000
 InputVariable: distance
 	enabled: true
-	range: 0.000 2.000
+	range: 0.000 5.000
 	lock-range: true
-	term: close Ramp 1.000 0.000
-	term: faraway Ramp 0.000 2.000
+	term: close Ramp 3.000 0.000
+	term: faraway Ramp 2.000 5.000
 OutputVariable: mSteer
   enabled: true
   range: -1.000 1.000
