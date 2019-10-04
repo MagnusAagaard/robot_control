@@ -4,14 +4,15 @@ InputVariable: obstacle
   enabled: true
   range: -1.000 1.000
   lock-range: true
-  term: left Ramp -1.000 1.000
-  term: right Ramp 1.000 -1.000
+  term: left Ramp 0.000 1.000
+  term: right Ramp 0.000 -1.000
+  term: center Triangle -0.500 0.000 0.500
 InputVariable: distance
 	enabled: true
 	range: 0.000 5.000
 	lock-range: true
-	term: close Ramp 3.000 0.000
-	term: faraway Ramp 2.000 5.000
+	term: close Ramp 1.500 0.000
+	term: faraway Ramp 0.500 5.000
 OutputVariable: mSteer
   enabled: true
   range: -1.000 1.000
@@ -23,12 +24,25 @@ OutputVariable: mSteer
   term: left Ramp 0.000 -1.000
   term: straight Triangle -0.500 0.000 0.500
   term: right Ramp 0.000 1.000
+OutputVariable: mSpeed
+  enabled: true
+  range: 0.000 1.000
+  lock-range: false
+  aggregation: Maximum
+  defuzzifier: Centroid 100
+  default: nan
+  lock-previous: true
+  term: fast Ramp 0.000 0.500
+  term: slow Ramp 0.500 0.000
 RuleBlock: mamdani
   enabled: true
   conjunction: Minimum
   disjunction: none
   implication: AlgebraicProduct
   activation: General
-  rule: if distance is faraway then mSteer is straight
+  rule: if distance is faraway then mSteer is straight and mSpeed is fast
+  rule: if distance is close then mSpeed is slow
   rule: if obstacle is left and distance is close then mSteer is right
   rule: if obstacle is right and distance is close then mSteer is left
+  rule: if obstacle is center and obstacle is right and distance is close then mSteer is left
+  rule: if obstacle is center and obstacle is left and distance is close then mSteer is right

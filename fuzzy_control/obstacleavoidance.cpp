@@ -26,6 +26,7 @@ int main(int argc, char* argv[]){
     InputVariable* obstacle = engine->getInputVariable("obstacle");
     InputVariable* distance = engine->getInputVariable("distance");
     OutputVariable* steer = engine->getOutputVariable("mSteer");
+    OutputVariable* speed = engine->getOutputVariable("mSpeed");
 
     // Load gazebo
     gazebo::client::setup(argc, argv);
@@ -43,7 +44,7 @@ int main(int argc, char* argv[]){
             node->Advertise<gazebo::msgs::Pose>("~/pioneer2dx/vel_cmd");
 
 
-    float speed = 0.3f;
+    //float speed = 0.3f;
     //Ændre speed når vi skal dreje, jo skarpere jo lavere hastighed
     while(true){
       gazebo::common::Time::MSleep(10);
@@ -51,7 +52,7 @@ int main(int argc, char* argv[]){
       distance->setValue(currentDistance);
       engine->process();
       // Generate a pose
-      ignition::math::Pose3d pose(double(speed), 0, 0, 0, 0, double(steer->getValue()));
+      ignition::math::Pose3d pose(double(speed->getValue()), 0, 0, 0, 0, double(steer->getValue()));
       FL_LOG("obstacle.input = " << Op::str(currentAngle) << " distance.input = " << Op::str(currentDistance) << " => " << "steer.output = " << Op::str(steer->getValue()));
 
       // Convert to a pose message
