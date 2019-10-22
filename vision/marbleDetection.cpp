@@ -63,7 +63,7 @@ void drawMarble(Mat im, vector<Vec3f> marbles){
     }
 }
 
-int int main(int argc, char const *argv[]) {
+int int main(int argc, char **_argv) {
 
     // load gazebo
     gazebo::client::setup(_argc, _argv);
