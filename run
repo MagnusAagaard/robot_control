@@ -7,10 +7,10 @@ sleep 1
 cd /home/magnus/robot_control/fuzzy_control/
 ./laserScan &
 sleep 5
-konsole -e ./robot_control &
+konsole -e ./obstacle_avoidance &
 read cm
 pkill -9 -P $$
 pkill -9 -x laserScan
-pkill -9 -x robot_control
+pkill -9 -x obstacle_avoidance
 pkill -9 -x gzclient
 pkill -9 -x run
