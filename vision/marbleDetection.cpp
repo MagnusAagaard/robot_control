@@ -23,7 +23,6 @@ void cameraCallback(ConstImageStampedPtr &msg) {
 
   img = img.clone();
   im = img.clone();
-  cvtColor(im, im, CV_RGB2BGR);
 }
 
 // Egde detection
