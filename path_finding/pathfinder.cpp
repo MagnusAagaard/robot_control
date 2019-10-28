@@ -23,8 +23,8 @@ void poseCallback(ConstPosesStampedPtr &msg)
   {
     if (msg->pose(i).name() == "pioneer2dx")
     {
-        vX = (int)msg->pose(i).position().x()*10;
-        vY = (int)msg->pose(i).position().y()*10;
+        vX = (int)(msg->pose(i).position().x()*10);
+        vY = (int)(msg->pose(i).position().y()*10);
 				w = msg->pose(i).orientation().w();
 				z = msg->pose(i).orientation().z();
     }
@@ -171,6 +171,11 @@ void waveFrontPlanner(Mat &workspace, Mat &brushfire, Point &start, Point &goal,
 		path.push_back(newPoint);
 		currentPoint = newPoint;
 	}
+  //Offset points to new center
+  for(uint16_t i = 0; i < path.size(); i++)
+  {
+    path[i] -= Point(workspace.cols/2, workspace.rows/2);
+  }
 	cout << "Planning done!" << endl;
 }
 
@@ -187,14 +192,20 @@ float calc_angle(float z, float w)
 }
 
 float calc_angle_to_point(float &cra, Point &p)
-{
-	float angle_to_point = atan2((p.x - vX), (p.y - vY)) * 180 / PI;
+{ //Fucker helt op her, AP stikker af
+  //cout << "pX: " << p.x << endl;
+  //cout << "pX: " << vX << endl;
+  //cout << "pY: " << p.y << endl;
+  //cout << "pX: " << vY << endl;
+
+	float angle_to_point = atan2((-p.y-vY), (p.x-vX)) * 180 / PI;
+  cout << "AP: " << angle_to_point << endl;
 	return (angle_to_point - cra);
 }
 
 void generateCmd(ignition::math::Pose3d &pose, vector<Point> &path)
 {
-	if(path.size() < 1){
+	if(path.size() <= 1){
 		cout << "Goal reached!" << endl;
 		return;
 	}
@@ -203,15 +214,18 @@ void generateCmd(ignition::math::Pose3d &pose, vector<Point> &path)
 	float dir = 0.0f;
 	float currentRobotAngle = calc_angle(z, w);
 	float angleBetweenPoints = calc_angle_to_point(currentRobotAngle, path[0]);
-	if(angleBetweenPoints > 10)
-	{
-		dir = 0.3f;
-	}
-	else if(angleBetweenPoints < -10)
+  //cout << "AP: " << angleBetweenPoints << endl;
+  cout << "CRA: " << currentRobotAngle << endl;
+
+	if(angleBetweenPoints > 1)
 	{
 		dir = -0.3f;
 	}
-	else if(distanceToGoal(path[0], robotPos) > 3)
+	else if(angleBetweenPoints < -1)
+	{
+		dir = 0.3f;
+	}
+	else if(distanceToGoal(path[0], robotPos) > 1.5)
 	{
 		speed = 0.3f;
 	}
@@ -225,29 +239,24 @@ void generateCmd(ignition::math::Pose3d &pose, vector<Point> &path)
 int main()
 {
 	//Gazebo setup
+  gazebo::client::setup();
 	gazebo::transport::NodePtr node(new gazebo::transport::Node());
   node->Init();
 	gazebo::transport::SubscriberPtr poseSubscriber = node->Subscribe("~/pose/info", poseCallback);
 	// Publish to the robot vel_cmd topic
 	gazebo::transport::PublisherPtr movementPublisher = node->Advertise<gazebo::msgs::Pose>("~/pioneer2dx/vel_cmd");
 
-	// Publish a reset of the world
-	gazebo::transport::PublisherPtr worldPublisher = node->Advertise<gazebo::msgs::WorldControl>("~/world_control");
-	gazebo::msgs::WorldControl controlMessage;
-	controlMessage.mutable_reset()->set_all(true);
-	worldPublisher->WaitForConnection();
-	worldPublisher->Publish(controlMessage);
-
 	//Plan
 	Mat workspaceTmp = imread("maps/smallworld.png", IMREAD_GRAYSCALE);
 	Mat workspace;
-	resize(workspaceTmp, workspace, Size(workspaceTmp.cols*3.33, workspaceTmp.rows*3.33), 0, 0, INTER_NEAREST);
+	resize(workspaceTmp, workspace, Size(workspaceTmp.cols*6.67, workspaceTmp.rows*6.67), 0, 0, INTER_NEAREST);
 	Mat workspace16bit;
 	workspace.convertTo(workspace16bit, CV_16U, 255);
 	Mat brushfire(workspace16bit.size(), workspace16bit.type(), Scalar(0));
 	fixBorder(workspace16bit);
-	int gx = 50;
-	int gy = workspace16bit.rows / 2;
+  cout << workspace16bit.size() << endl;
+	int gx = 110;
+	int gy = 20;
 	int sx = workspace16bit.cols/2;
 	int sy = workspace16bit.rows/2;
 	Point goal(gx, gy);
@@ -255,8 +264,8 @@ int main()
 	brushFire(workspace16bit, brushfire, start, goal);
 	vector<Point> path;
 	waveFrontPlanner(workspace16bit, brushfire, start, goal, path);
-	//imshow("image", workspace16bit);
-	//waitKey(0);
+	imshow("image", workspace16bit);
+	waitKey(0);
 
 	while(true){
 		gazebo::common::Time::MSleep(10);
