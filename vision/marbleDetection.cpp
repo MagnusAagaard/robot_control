@@ -71,7 +71,7 @@ void drawMarble(){
             Point center(cvRound(marbles[i][0]), cvRound(marbles[i][1]));
             int radius = cvRound(marbles[i][2]);
             // circle center
-            circle( im, center, 1, Scalar(0,255,0), -1, 8, 0 );
+            circle( im, center, 1, Scalar(255,0,0), -1, 8, 0 );
             // circle outline
             circle( im, center, radius, Scalar(255,0,0), 1, 8, 0 );
         }
