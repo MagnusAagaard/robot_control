@@ -7,13 +7,6 @@ InputVariable: obstacle
   term: left Ramp 0.000 1.000
   term: right Ramp 0.000 -1.000
   term: center Triangle -0.500 0.000 0.500
-InputVariable: returnPoint
-  enabled: true
-  range: -1.000 1.000
-  lock-range: true
-  term: left Ramp 0.000 1.000
-  term: right Ramp 0.000 -1.000
-  term: center Triangle -0.500 0.000 0.500
 InputVariable: distance
 	enabled: true
 	range: 0.000 5.000
@@ -47,11 +40,6 @@ RuleBlock: mamdani
   disjunction: none
   implication: AlgebraicProduct
   activation: General
-  #Return point rules
-  rule: if returnPoint is left then mSteer is left
-  rule: if returnPoint is right then mSteer is right
-  rule: ig returnPoint is center then mSteer is straight
-  #General control rules
   rule: if distance is faraway then mSteer is straight and mSpeed is fast
   rule: if distance is close then mSpeed is slow
   rule: if obstacle is left and distance is close then mSteer is right
