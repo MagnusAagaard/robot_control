@@ -48,7 +48,7 @@ vector<Node*> getNeighbours(Node *currentNode, vector<Node*> &open, vector<Node*
 					}
 				}
 			}
-			
+
 			if (!found) {
 				node = new Node(newPoint);
 				neighbours.push_back(node);
@@ -83,7 +83,7 @@ void findPath(Mat &workspace, Mat &workspaceBGR, vector<Point> &path, Node &star
 	Node* currentNode;
 	currentNode = new Node(start);
 	open.push_back(currentNode);
-	
+
 	while (open.size())
 	{
 		if (showPath)
@@ -93,7 +93,7 @@ void findPath(Mat &workspace, Mat &workspaceBGR, vector<Point> &path, Node &star
 				workspaceBGR.at<cv::Vec3b>(open[i]->getPoint()) = cv::Vec3b(0, 255, 0);
 			}
 		}
-		
+
 		int currentPosIndex = 0;
 		currentNode = open[0];
 		for (int i = 1; i < open.size(); i++) {
@@ -104,7 +104,7 @@ void findPath(Mat &workspace, Mat &workspaceBGR, vector<Point> &path, Node &star
 		}
 		closed.push_back(currentNode);
 		open.erase(open.begin()+currentPosIndex);
-		
+
 		if (showPath)
 		{
 			workspaceBGR.at<cv::Vec3b>(currentNode->getPoint()) = cv::Vec3b(0, 0, 255);
@@ -146,11 +146,11 @@ int main()
 {
 	const int scale = 2;
 
-	Mat workspaceTmp = cv::imread("smallworld.png", cv::IMREAD_GRAYSCALE);
+	Mat workspaceTmp = cv::imread("maps/smallworld.png", cv::IMREAD_GRAYSCALE);
 	Mat workspace;
 	resize(workspaceTmp, workspace, Size(workspaceTmp.cols*scale*10/1.41735, workspaceTmp.rows*scale*10/1.41735), 0, 0, cv::INTER_NEAREST);
 
-	Mat workspaceTmpBGR = cv::imread("smallworld.png", cv::IMREAD_COLOR);
+	Mat workspaceTmpBGR = cv::imread("maps/smallworld.png", cv::IMREAD_COLOR);
 	Mat workspaceBGR;
 	resize(workspaceTmpBGR, workspaceBGR, Size(workspaceTmpBGR.cols * scale * 10 / 1.41735, workspaceTmpBGR.rows * scale * 10 / 1.41735), 0, 0, cv::INTER_NEAREST);
 
@@ -174,7 +174,7 @@ int main()
 	}
 
 	imshow("image", workspace);
-	imwrite("smallworld_astar.png", workspace);
+	//imwrite("smallworld_astar.png", workspace);
 	cv::waitKey(0);
 	return 0;
 }

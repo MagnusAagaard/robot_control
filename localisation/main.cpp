@@ -18,18 +18,18 @@ void localizeRobot(Mat &workspace, Point initBelief, double initTheta)
 		filter.prediction(dt, sigma_pos, lin_vel, the_vel);
 		filter.showParticles(workspace);
 	}
-	
+
 }
 
 int main()
 {
 	const int scale = 1;
 
-	Mat workspaceTmp = cv::imread("smallworld.png", cv::IMREAD_GRAYSCALE);
+	Mat workspaceTmp = cv::imread("maps/smallworld.png", cv::IMREAD_GRAYSCALE);
 	Mat workspace;
 	resize(workspaceTmp, workspace, Size(workspaceTmp.cols*scale*10/1.41735, workspaceTmp.rows*scale*10/1.41735), 0, 0, cv::INTER_NEAREST);
 
-	Mat workspaceTmpBGR = cv::imread("smallworld.png", cv::IMREAD_COLOR);
+	Mat workspaceTmpBGR = cv::imread("maps/smallworld.png", cv::IMREAD_COLOR);
 	Mat workspaceBGR;
 	resize(workspaceTmpBGR, workspaceBGR, Size(workspaceTmpBGR.cols * scale * 10 / 1.41735, workspaceTmpBGR.rows * scale * 10 / 1.41735), 0, 0, cv::INTER_NEAREST);
 
