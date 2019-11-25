@@ -8,7 +8,8 @@ ParticleFilter::ParticleFilter()
 
 ParticleFilter::ParticleFilter(cv::Mat workspace)
 {
-	_workspace = workspace;
+	workspace.copyTo(_workspace);
+	//_workspace = workspace;
 }
 
 
@@ -22,7 +23,7 @@ void ParticleFilter::initParticles(cv::Point startP, double startOri, double sig
 	std::normal_distribution<double> dist_x(startP.x, sigma_pos[0]);	//normal dist from x and its std.
 	std::normal_distribution<double> dist_y(startP.y, sigma_pos[1]);
 	std::normal_distribution<double> dist_theta(startOri, sigma_pos[2]);
-	
+
 	for (int i = 0; i < N; i++)
 	{
 		double sample_x = dist_x(gen);			//Get random samples along the dist. created earlier
@@ -40,12 +41,12 @@ void ParticleFilter::initParticles(cv::Point startP, double startOri, double sig
 	{
 		_particles[i].generateDistances(_workspace);
 	}
-	
-	std::cout << "Init done: " << _particles.size() << std::endl;
+
+	/*std::cout << "Init done: " << _particles.size() << std::endl;
 	for (int i = 0; i < _particles.size(); i++)
 	{
 		std::cout << _particles[i].x << ", " << _particles[i].y << std::endl;
-	}
+	}*/
 }
 
 void ParticleFilter::prediction(double dt, double sigma_pos[], double vlin, double vth)
@@ -76,12 +77,36 @@ void ParticleFilter::prediction(double dt, double sigma_pos[], double vlin, doub
 	}
 }
 
+void updateWeights(double ranges[])
+{
+	for(int i = 0; i < _particles.size(); i++)
+	{
+		for(int k = 0; k < _particles[i]._generated_distances.size(); k++)
+		{
+			float prob = normal_pdf(ranges[k], _particles[i]._generated_distances[k], 0.03*10)
+		}
+	}
+	//make gaus dist for each particles gen. distance with mean true dist and sigma from laser scanner
+	//use pdf to calc prob for laser scan being part of this particle. sammenlign med hver partikkel, find den der har højest prob
+	//resample??
+
+}
+
+double normal_pdf(double x, double m, double s)
+{
+    static const double inv_sqrt_2pi = 0.3989422804014327;
+    double a = (x - m) / s;
+
+    return inv_sqrt_2pi / s * std::exp(-0.5f * a * a);
+}
+
 void ParticleFilter::showParticles(cv::Mat& workspace)
 {
+	_workspace.copyTo(workspace);
 	for (int i = 0; i < _particles.size(); i++)
 	{
 		workspace.at<uchar>(_particles[i].y, _particles[i].x) = 0;
 	}
 	cv::imshow("Particles", workspace);
-	cv::waitKey(10);
+	cv::waitKey(1);
 }

@@ -12,7 +12,7 @@ Particle::Particle(int id)
 }
 
 void Particle::generateDistances(cv::Mat& workspace)
-{//lav true distances d ud fra kortet. genetared_distances[0] = længst til venstre
+{//lav true distances d ud fra kortet. genetared_distances[0] = lï¿½ngst til venstre
 	_generated_distances.clear();
 	int rayx = x;
 	int rayy = y;
@@ -25,14 +25,14 @@ void Particle::generateDistances(cv::Mat& workspace)
 		rayy = y + 100 * sin(raytheta);
 		//std::cout << "Start: " << x << ", " << y << std::endl;
 		//std::cout << "Ray: " << rayx << ", " << rayy << std::endl;
-		cv::circle(workspace, cv::Point(x, y), 5, (1, 1, 1));
+		//cv::circle(workspace, cv::Point(x, y), 5, (1, 1, 1));
 		cv::LineIterator li(workspace, cv::Point(x, y), cv::Point(rayx,rayy));
 		//std::cout << li.pos() << std::endl;
 		for (int k = 0; k < li.count; k++, ++li)
 		{
 			if (workspace.at<uchar>(li.pos()) == 0)
 			{
-				cv::circle(workspace, cv::Point(li.pos()), 3, (1, 1, 1));
+				//cv::circle(workspace, cv::Point(li.pos()), 3, (1, 1, 1));
 				double dist = _calcDistance(cv::Point(x, y), cv::Point(li.pos()));
 				_generated_distances.push_back(dist);
 				wallFound = true;
@@ -44,8 +44,13 @@ void Particle::generateDistances(cv::Mat& workspace)
 
 		raytheta += dtheta;
 	}
-	cv::imshow("distance", workspace);
-	cv::waitKey(0);
+	/*raytheta = theta - 2.268899;
+	for(int i = 0; i < _generated_distances.size(); i++)
+	{
+		std::cout << "Angle: " << raytheta + dtheta*i << ", GD: " << _generated_distances[i] << std::endl;
+	}*/
+	//cv::imshow("distance", workspace);
+	//cv::waitKey(0);
 }
 
 Particle::~Particle()

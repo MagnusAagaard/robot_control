@@ -11,13 +11,12 @@ public:
 	double y;
 	double theta;
 	double weight;
+	std::vector<double> _generated_distances;
 	const int getId() const { return _id; }
 	void generateDistances(cv::Mat& workspace);
 
 	~Particle();
 private:
 	int _id;
-	std::vector<double> _generated_distances;
 	double _calcDistance(cv::Point a, cv::Point b);
 };
-
