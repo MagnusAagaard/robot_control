@@ -37,7 +37,7 @@ void poseCallback(ConstPosesStampedPtr &_msg) {
   for (int i = 0; i < _msg->pose_size(); i++) {
     if (_msg->pose(i).name() == "pioneer2dx") {
         robotX = (int)(_msg->pose(i).position().x()*10);
-        robotY = (int)(_msg->pose(i).position().y()*10);
+        robotY = (int)(_msg->pose(i).position().y()*-10);
         robotAngle = calc_angle(_msg->pose(i).orientation().z(), _msg->pose(i).orientation().w());
     }
   }
@@ -62,12 +62,14 @@ void lidarCallback(ConstLaserScanStampedPtr &msg) {
   int nranges = msg->scan().ranges_size();
   int nintensities = msg->scan().intensities_size();
 
-  assert(nranges == nintensities);
+  //assert(nranges == nintensities);
+  //std::cout << "Min: " << angle_min << std::endl;
+  //std::cout << "N: " << nranges << std::endl;
   for (int i = 0; i < nranges; i+=2) {
-    //float angle = angle_min + i * angle_increment;
-    float range = std::min(float(msg->scan().ranges(i)), range_max);
+    float angle = robotAngle*M_PI/180 + angle_min + i * angle_increment;
+    float range = std::min(float(msg->scan().ranges(i)), range_max)*10;
     ranges[i/2] = range;
-        //std::cout << angle << " " << range << " " << intensity << std::endl;
+        //std::cout << angle << " " << range << " " << std::endl;
   }
 }
 
@@ -93,19 +95,21 @@ int main(int _argc, char **_argv)
      Mat workspaceBGR;
      resize(workspaceTmpBGR, workspaceBGR, Size(workspaceTmpBGR.cols * scale * 10 / 1.41735, workspaceTmpBGR.rows * scale * 10 / 1.41735), 0, 0, cv::INTER_NEAREST);
 
-     double sigma_pos[3] = { 0.03, 0.03, 0.01 };
-     double dt = 0.05;
-     double initTheta = 0.0;
+     double sigma_pos[3] = { 0.03*10, 0.03*10, 0.05 };
+     double dt = 0.02;
+     //double initTheta = 0.0;
      gazebo::common::Time::MSleep(1000);
      ParticleFilter filter(workspace);
+     //std::cout << "Init: " << robotAngle << std::endl;
      Point initPoint(robotX + workspace.cols/2, robotY + workspace.rows/2);
-     filter.initParticles(initPoint, initTheta, sigma_pos, 10);
+     filter.initParticles(initPoint, robotAngle*M_PI/180, sigma_pos, 200);
 
     while(true){
         gazebo::common::Time::MSleep(dt*1000);
         filter.prediction(dt, sigma_pos, lin_vel, ang_vel);
-        //filter.updateWeights(ranges);
-        filter.showParticles(workspace);
+        filter.updateWeights(ranges);
+        filter.resample();
+        filter.showParticles(workspace, robotX+workspace.cols/2, robotY+workspace.rows/2);
         //cout << "Pos: " << robotX + workspace.cols/2 << ", " << robotY+workspace.rows/2 << ". Angle: " << robotAngle << endl;
     }
 
