@@ -150,7 +150,7 @@ int main(int _argc, char **_argv) {
       break;
 
     std::cout << key << std::endl;
-    
+
     if ((key == key_up) && (speed <= 1.2f))
       speed += 0.05;
     else if ((key == key_down) && (speed >= -1.2f))
