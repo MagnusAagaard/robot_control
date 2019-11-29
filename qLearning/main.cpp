@@ -4,25 +4,62 @@
 using namespace std;
 
 // Dimensions of the environment
-#define COLUMNS 4
-#define ROWS 3
+
 #define ACTIONS 4
-#define STATES 11
 
 // Environment -- spaces: agent can move, "+": reward, "-": punishment.
+/*
+#define ROWS 3
+#define COLUMNS 4
 char environment[ROWS][COLUMNS] = { { ' ', ' ', ' ', ' ' },
-                                    { ' ', ' ', ' ', ' ' },
-                                    { ' ', ' ', '+', ' ' } };
+                                    { ' ', '#', ' ', ' ' },
+                                    { ' ', '+', ' ', '+' } };
 
-vector<vector<float>> qTable;
+*/
+
+#define ROWS 21
+#define COLUMNS 24
+
+char environment[ROWS][COLUMNS] = {
+        {' ', ' ', ' ', '#', ' ', ' ', '#', ' ', ' ', ' ', ' ', '#', ' ', ' ', ' ', ' ', ' ', ' ', '#', '#', '#', '#', ' ', ' '},
+        {' ', '+', ' ', ' ', ' ', ' ', '#', ' ', ' ', ' ', ' ', '#', ' ', ' ', ' ', ' ', ' ', ' ', '#', ' ', ' ', '#', ' ', ' '},
+        {' ', ' ', ' ', '#', ' ', ' ', '#', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '+', ' ', ' ', '#', ' ', ' ', ' ', ' ', ' '},
+        {'#', '#', '#', '#', ' ', '+', '#', ' ', ' ', '+', ' ', '#', ' ', ' ', ' ', ' ', ' ', ' ', '#', ' ', ' ', '#', ' ', ' '},
+        {' ', ' ', ' ', ' ', ' ', ' ', '#', ' ', ' ', ' ', ' ', '#', '#', '#', '#', '#', '#', '#', '#', ' ', ' ', '#', '+', ' '},
+        {' ', ' ', ' ', ' ', ' ', ' ', '#', ' ', ' ', ' ', ' ', '#', ' ', ' ', ' ', ' ', ' ', ' ', '#', '+', ' ', '#', ' ', ' '},
+        {' ', '+', ' ', ' ', ' ', ' ', '#', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '+', ' ', ' ', '#', ' ', ' ', '#', ' ', ' '},
+        {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '#', ' ', ' ', ' ', ' ', ' ', ' ', '#', ' ', ' ', '#', ' ', ' '},
+        {'#', '#', '#', '#', '#', ' ', '#', ' ', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', ' ', ' ', '#', '#', ' '},
+        {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+        {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+        {' ', ' ', ' ', '#', '#', ' ', ' ', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', ' ', ' ', ' ', ' '},
+        {' ', ' ', ' ', '#', ' ', ' ', ' ', ' ', '#', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '#', ' ', ' ', ' ', ' '},
+        {' ', ' ', ' ', '#', ' ', ' ', ' ', ' ', '#', ' ', ' ', ' ', ' ', ' ', '+', ' ', ' ', ' ', ' ', '#', ' ', ' ', ' ', ' '},
+        {' ', ' ', ' ', '#', ' ', ' ', ' ', ' ', '#', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+        {' ', '+', ' ', '#', ' ', '+', ' ', ' ', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', ' ', ' ', ' ', ' '},
+        {' ', ' ', ' ', '#', ' ', ' ', ' ', ' ', '#', ' ', ' ', ' ', ' ', ' ', '#', ' ', ' ', ' ', ' ', '#', ' ', ' ', ' ', ' '},
+        {' ', ' ', ' ', '#', ' ', ' ', ' ', ' ', '#', ' ', ' ', ' ', ' ', ' ', '#', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+        {' ', ' ', ' ', '#', ' ', ' ', ' ', ' ', '#', ' ', '+', ' ', ' ', ' ', '#', ' ', ' ', '+', ' ', '#', ' ', ' ', ' ', ' '},
+        {' ', ' ', ' ', '#', ' ', ' ', ' ', ' ', '#', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '#', ' ', ' ', ' ', ' '}
+};
+
+/*char environment[ROWS][COLUMNS] = {{ ' ',' ','#','+','#',' ',' '},
+                                   { ' ',' ',' ',' ','#','+',' '},
+                                   { ' ','+','#',' ','#',' ',' '},
+                                   { ' ','#','#',' ','#',' ',' '},
+                                   { '+',' ',' ',' ','#',' ','#'},
+                                   { '#','#','#',' ',' ',' ',' '},
+                                   { ' ','+','#',' ','#','#','#'},
+                                   { ' ','#','#',' ',' ',' ',' '},
+                                   { ' ',' ',' ','+','#',' ','+'}};
+                                   */
+
+char environmentDefualt[ROWS][COLUMNS];
 
 struct state {
     int row;
     int col;
-    bool terminal;
 };
-
-const state terminalState = {-1, -1, true};
 
 float discountRate = 0.9f;
 
@@ -30,41 +67,98 @@ float theta = 0.01f;
 
 float learningRate = 0.4f;
 
-int episodes = 0;
-int maxEpisodes = 100000;
+int episodes;
+
+int maxEpisodes = 50000;
+
+int marblesPickedUp = 0;
+int numberOfMarbles = 0;
 
 enum action {UP, DOWN, LEFT, RIGHT};
-
 action actions[ACTIONS] = {UP, DOWN, LEFT, RIGHT};
 
-void initQtable(){
-    string maxStateString = to_string(ROWS) + to_string(COLUMNS);
-    int maxState = stoi(maxStateString) + 1;
+void numberOfMarblesInEnv(){
+    for (int i = 0; i < ROWS; i++) {
+        for (int j = 0; j < COLUMNS; j++) {
+            if (environment[i][j] == '+')
+                numberOfMarbles++;
+        }
+    }
+}
 
-    vector<float> temp;
+vector<float> temp;
+
+string maxStateString;
+int maxState;
+
+struct qtable {
+    vector<vector<float>> qT;
+    vector<state> goals;
+    string goalsString;
+};
+
+vector<qtable> qtables;
+
+void initTempVector(){
+    maxStateString = to_string(ROWS - 1) + to_string(COLUMNS - 1);
+    maxState = stoi(maxStateString) + 1;
+
+    string a = maxStateString;
+    int b = maxState;
 
     for (int k = 0; k < ACTIONS; k++) {
         temp.push_back(0.0f);
     }
+}
 
-    cout << "Init qTable" << endl;
+vector<state> findGoals(){
+    state goalState;
+    vector<state> goals;
+
+    for (int i = 0; i < ROWS; i++) {
+        for (int j = 0; j < COLUMNS; j++) {
+            if (environmentDefualt[i][j] == '+'){
+                goalState = {i, j};
+                goals.push_back(goalState);
+            }
+        }
+    }
+    return goals;
+}
+
+int getStateID(state _state) {
+    string stateIDString = to_string(_state.row) + to_string(_state.col);
+    return stoi(stateIDString);
+}
+
+string getGoalString(vector<state> _goals){
+    string goalString;
+    for (int i = 0; i < numberOfMarbles; i++) {
+        if (_goals[i].row != -1 && _goals[i].col != -1)
+            goalString += to_string(_goals[i].row) + to_string(_goals[i].col);
+    }
+    return goalString;
+}
+
+qtable initQtable(vector<state> _goals){
+    vector<vector<float>> emptyQtable;
+
+    //cout << "Init qTable" << endl;
     for (int i = 0; i < maxState; i++) {
-        qTable.push_back(temp);
+        emptyQtable.push_back(temp);
     }
 
-    /*
-    for (int _state = 0; _state < STATES; _state++) {
-        for (int _action = 0; _action < ACTIONS; _action++)
-            qTable[_state][_action] = 0.0f;
+    string goalString = getGoalString(_goals);
 
-    }
-    */
+    qtable newQtable = {emptyQtable, _goals, goalString};
+
+    // Add to qTable to vector
+    qtables.push_back(newQtable);
+
+    return newQtable;
 }
 
 state getNextState(state _state, action _action){
-    if (environment[_state.row][_state.col] != ' ')
-        return terminalState;
-
     switch (_action){
         case UP:
             _state.row -= 1;
@@ -80,40 +174,29 @@ state getNextState(state _state, action _action){
             break;
     }
 
-    if (_state.row < 0 || _state.col < 0 || _state.row >= ROWS || _state.col >= COLUMNS)
-        return terminalState;
-
-    _state.terminal = false;
     return _state;
 }
 
-float getReward(state _state, action _action){
-    state nextState = getNextState(_state, _action);
-
-    if (nextState.row < 0 || nextState.col < 0 || nextState.row >= ROWS || nextState.col >= COLUMNS)
+float getReward(state _state){
+    if (_state.row < 0 || _state.col < 0 || _state.row >= ROWS || _state.col >= COLUMNS)
         return -1.0f;
 
-    if (environment[nextState.row][nextState.col] == '+')
-        return 10;
-    return 0;
+    if (environment[_state.row][_state.col] == '+')
+        return 10.0f;
 
-    //return rewardTable[nextState.row][nextState.col];
+    if (environment[_state.row][_state.col] == '#')
+        return -1.0f;
+
+    return 0.0f;
 }
 
-int getStateID(state _state) {
-    string stateIDString = to_string(_state.row) + to_string(_state.col);
-    return stoi(stateIDString);
-
-    //return COLUMNS * _state.row + _state.col;
-}
-
-action bestAction(state _state){
+action bestAction(state _state, qtable _qTable){
     action bestAction = UP;
     float qValue, maxQvalue = -100;
     int stateID = getStateID(_state);
 
     for (int i = 0; i < ACTIONS; i++) {
-        qValue = qTable[stateID][i];
+        qValue = _qTable.qT[stateID][i];
         if (maxQvalue < qValue){
             maxQvalue = qValue;
             bestAction = actions[i];
@@ -122,24 +205,85 @@ action bestAction(state _state){
     return bestAction;
 }
 
-action getAction(state _state){
+action getAction(state _state, qtable _qTable){
     random_device rd;
     uniform_int_distribution<int> dist(0,maxEpisodes);
     uniform_int_distribution<int> distAction(0, ACTIONS - 1);
 
-    if (episodes * 0.9 < dist(rd)){
+    if (episodes * 0.7 < dist(rd)){
         return actions[distAction(rd)];
     }
 
-    return bestAction(_state);
+    return bestAction(_state, _qTable);
 }
 
-float getMaxQalueAtState(state _state){
+void saveQtable(qtable _qTable){
+    // Save qtable
+    for (int k = 0; k < qtables.size(); k++) {
+        if (_qTable.goalsString == qtables[k].goalsString)
+            qtables[k] = _qTable;
+    }
+}
+
+qtable changeQtable(state _state, qtable _qTable){
+    state removeGoal = {-1, -1};
+    vector<state> newGoals;
+
+    string goalString;
+
+    saveQtable(_qTable);
+
+    goalString = getGoalString(_qTable.goals);
+    string goal1 = to_string(_state.row) + to_string(_state.col);
+
+    // Find position af marble som er samlet op.
+    for (int i = 0; i < numberOfMarbles; i++) {
+        if(_state.row == _qTable.goals[i].row && _state.col == _qTable.goals[i].col){
+
+            // Lave en vector med de resterende marblesPickedUp
+            newGoals = _qTable.goals;
+            newGoals[i] = removeGoal;
+
+            goalString = getGoalString(newGoals);
+
+            // Led efter det corresponding qTable
+            for (int j = 0; j < qtables.size(); j++) {
+                if (goalString == getGoalString(qtables[j].goals))
+                    return qtables[j];
+            }
+            return initQtable(newGoals);
+        }
+    }
+}
+
+float getMaxQalueAtState(state _state, qtable _qTable){
+    /*if(getStateID(_state) == 27){
+        cout << "hej" << endl;
+        int a = _state.row;
+        int b = _state.col;
+
+        cout << "hej<" << endl;
+    }*/
+
+    if (_state.row < 0 || _state.col < 0 || _state.row >= ROWS || _state.col >= COLUMNS)
+        return 0;
+
+    if(environment[_state.row][_state.col] == '#')
+        return 0;
+
+    // if nextState is goal change qTable
+    if(environment[_state.row][_state.col] == '+'){
+        marblesPickedUp++;
+        if (marblesPickedUp < numberOfMarbles){
+            _qTable = changeQtable(_state, _qTable);
+        }
+    }
+
     int stateID = getStateID(_state);
     float qValue, maxQvalue = -100.f;
 
     for (int i = 0; i < ACTIONS; i++) {
-        qValue = qTable[stateID][i];
+        qValue = _qTable.qT[stateID][i];
         if (maxQvalue < qValue){
             maxQvalue = qValue;
         }
@@ -147,9 +291,34 @@ float getMaxQalueAtState(state _state){
     return maxQvalue;
 }
 
-void printQtable(){
+bool insideEnvironment(state _state){
+    if (environment[_state.row][_state.col] == '#')
+        return false;
+
+    if (_state.row < 0 || _state.col < 0 || _state.row >= ROWS || _state.col >= COLUMNS)
+        return false;
+
+    return true;
+}
+
+void resetEnvironment(){
+    for (int i = 0; i < ROWS; i++) {
+        for (int j = 0; j < COLUMNS; j++) {
+            environment[i][j] = environmentDefualt[i][j];
+        }
+    }
+}
+
+void printQtable(qtable _qTable){
     string stateIDString;
     int stateID;
+
+    cout << "qTable with goals in " << endl;
+    for (int i = 0; i < numberOfMarbles; i++) {
+        if (_qTable.goals[i].row != -1 && _qTable.goals[i].col != -1)
+            cout << to_string(_qTable.goals[i].row) << to_string(_qTable.goals[i].col) << " ";
+    }
+    cout << endl;
 
     for (int row = 0; row < ROWS; row++) {
         for (int col = 0; col < COLUMNS; col++) {
@@ -158,21 +327,20 @@ void printQtable(){
                 stateID = stoi(stateIDString);
                 cout << stateIDString;
                 for (int _action = 0; _action < ACTIONS; _action++)
-                    printf(" %5.2f ", qTable[stateID][_action]);
+                    printf(" %5.2f ", _qTable.qT[stateID][_action]);
 
                 printf("\n");
             }
         }
     }
+    cout << endl;
+}
 
-    /*
-    for (int _state = 0; _state < STATES; _state++) {
-        for (int _action = 0; _action < ACTIONS; _action++)
-            printf(" %5.2f ", qTable[_state][_action]);
-
-        printf("\n");
+void printQtables(){
+    for (int i = 0; i < qtables.size(); ++i) {
+        printQtable(qtables[i]);
+        cout << endl;
     }
-    */
 }
 
 // Print the environment with border around:
@@ -190,76 +358,188 @@ void printEnvironment() {
 }
 
 string actionName(action _action) {
-        switch (_action){
-            case UP:
-                return "UP";
+    switch (_action){
+        case UP:
+            return "UP";
 
-            case DOWN:
-                return "DOWN";
+        case DOWN:
+            return "DOWN";
 
-            case LEFT:
-                return "LEFT";
+        case LEFT:
+            return "LEFT";
 
-            case RIGHT:
-                return "RIGHT";
+        case RIGHT:
+            return "RIGHT";
 
-        }
-};
+    }
+}
 
-int main() {
+state randomStartingPosition(){
+    state stateStart;
 
-    initQtable();
-    printQtable();
-    cout << endl;
+    random_device rd;
+    uniform_int_distribution<int> distROW (0,ROWS - 1);
+    uniform_int_distribution<int> distCOL (0,COLUMNS - 1);
+    int row = distROW(rd);
+    int col = distCOL(rd);
 
+    while (environment[row][col] != ' '){
+        row = distROW(rd);
+        col = distCOL(rd);
+    }
+    stateStart = {row, col};
+
+    return stateStart;
+}
+
+void train(){
+
+    episodes = 0;
 
     state _state, nextState;
     action _action;
     int stateID;
-    float reward, maxQvalueAtState;
+    float reward, maxQvalueAtState, qValue;
+
+    qtable qTable, qtStart, newQtable;
+
+    initQtable(findGoals());
 
     while (episodes < maxEpisodes){
+        marblesPickedUp = 0;
 
-        _state = {0, 0, false};
+        resetEnvironment();
+
+        qtStart = qtables[0];
+        qTable = qtStart;
+
+        _state = randomStartingPosition();
 
         ++episodes;
 
-        while(!_state.terminal){
-            _action = getAction(_state);
-            //cout << "action: " << _action << endl;
+        while(marblesPickedUp < numberOfMarbles){
+
+            _action = getAction(_state, qTable);
 
             nextState = getNextState(_state, _action);
-            //cout << "NextState: " << nextState.row << nextState.col << nextState.terminal << endl;
 
-            cout << "Taking action " << actionName(_action) <<" Going from " << getStateID(_state) << " to " << getStateID(nextState) << endl;
             stateID = getStateID(_state);
-            //cout << "StateID: " << stateID << endl;
 
-            if (nextState.terminal)
-                maxQvalueAtState = 0;
+            maxQvalueAtState = getMaxQalueAtState(nextState, qTable);
+
+            reward = getReward(nextState);
+
+            qValue = (1 - learningRate) * qTable.qT[stateID][_action]
+                     + learningRate * (reward + discountRate * maxQvalueAtState);
+
+            qTable.qT[stateID][_action] = qValue;
+
+            // Check if a goal is found
+            if (0 <= reward && environment[nextState.row][nextState.col] == '+'){
+
+                //cout << "Goal found!" << endl;
+                //printQtable(qTable);
+
+                environment[nextState.row][nextState.col] = ' ';
+
+                // check if all marblesPickedUp is found
+                if(marblesPickedUp == numberOfMarbles){
+                    saveQtable(qTable);
+                    //cout << "All marblesPickedUp found" << endl;
+                    break;
+                }
+
+                //Change qTable
+                qTable = changeQtable(nextState, qTable);
+            }
+
+            if (insideEnvironment(nextState))
+                _state = nextState;
             else
-                maxQvalueAtState = getMaxQalueAtState(nextState);
-            //cout << "maxQvalueAtState: " << maxQvalueAtState << endl;
-
-            reward = getReward(_state, _action);
-            //cout << "Reward: " << reward << endl;
-
-            //cout << "Updating qTable.." << endl;
-            qTable[stateID][_action] = (1-learningRate) * qTable[stateID][_action]
-                    + learningRate * (reward + discountRate * maxQvalueAtState);
-
-            if (environment[nextState.row][nextState.col] == '+')
-                break;
-
-            _state = nextState;
+                _state = randomStartingPosition();
         }
 
         cout << "Episodes: " << episodes << endl;
     }
 
-    printEnvironment();
-    printQtable();
+    cout << "All qtables" << endl;
+    printQtables();
+    cout << "number of qtables " << qtables.size() << endl;
+    //printQtable(qTable);
+}
 
+void printActionSym(action a) {
+    switch (a) {
+        case UP: std::cout << " ↑ ";
+            break;
+        case DOWN: std::cout << " ↓ ";
+            break;
+        case LEFT: std::cout << " ← ";
+            break;
+        case RIGHT: std::cout << " → ";
+            break;
+    }
+}
+
+void getBestPath(state _state){
+    vector<state> bestPath;
+    qtable _qTable = qtables[0];
+    action _action;
+    string goalString;
+
+    marblesPickedUp = 0;
+
+    bestPath.push_back(_state);
+
+    resetEnvironment();
+
+    int i = 0;
+
+    while(marblesPickedUp < numberOfMarbles){
+        i++;
+        _action = bestAction(_state, _qTable);
+        _state = getNextState(_state, _action);
+        cout << "Taking ";
+        printActionSym(_action);
+        cout << " and going to state " << to_string(getStateID(_state)) << endl;
+        bestPath.push_back(_state);
+        if(environment[_state.row][_state.col] == '+'){
+            cout << "goal found" << endl;
+            marblesPickedUp++;
+            environment[_state.row][_state.col] = ' ';
+            _qTable = changeQtable(_state, _qTable);
+        }
+    }
+
+    for (int i = 0; i < bestPath.size(); i++) {
+        cout << to_string(getStateID(bestPath[i])) << " ";
+    }
+    cout << endl;
+
+    cout << "Size of qTables " << qtables.size() << endl;
+}
+
+void initEnv(){
+    for (int i = 0; i < ROWS; i++) {
+        for (int j = 0; j < COLUMNS; j++) {
+            environmentDefualt[i][j] = environment[i][j];
+        }
+    }
+}
+
+void init(){
+    initEnv();
+    initTempVector();
+    numberOfMarblesInEnv();
+}
+
+int main() {
+    init();
+
+    train();
+
+    state startState = {0, 0};
+    getBestPath(startState);
 
     std::cout << "Hello, World!" << std::endl;
     return 0;
