@@ -95,14 +95,14 @@ int main(int _argc, char **_argv)
      Mat workspaceBGR;
      resize(workspaceTmpBGR, workspaceBGR, Size(workspaceTmpBGR.cols * scale * 10 / 1.41735, workspaceTmpBGR.rows * scale * 10 / 1.41735), 0, 0, cv::INTER_NEAREST);
 
-     double sigma_pos[3] = { 0.03*10, 0.03*10, 0.05 };
+     double sigma_pos[3] = { 0.05*10, 0.05*10, 0.05 };
      double dt = 0.02;
      //double initTheta = 0.0;
      gazebo::common::Time::MSleep(1000);
      ParticleFilter filter(workspace);
      //std::cout << "Init: " << robotAngle << std::endl;
      Point initPoint(robotX + workspace.cols/2, robotY + workspace.rows/2);
-     filter.initParticles(initPoint, robotAngle*M_PI/180, sigma_pos, 200);
+     filter.initParticles(initPoint, robotAngle*M_PI/180, sigma_pos, 50);
 
     while(true){
         gazebo::common::Time::MSleep(dt*1000);
