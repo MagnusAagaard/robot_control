@@ -5,8 +5,11 @@
 #include <gazebo/transport/transport.hh>
 #include <iostream>
 #include <math.h>
+#include <fstream>
 
 using namespace std;
+
+const char* path_to_csv = "/home/magnus/testworldpath.csv";
 
 double currentAngle;
 double currentDistance;
@@ -25,6 +28,8 @@ void inputCallback(ConstVector2dPtr &msg)
 
 void poseCallback(ConstPosesStampedPtr &msg)
 {
+  std::ofstream myfile;
+  myfile.open(path_to_csv, std::ios::out | std::ios::app);
   for (int i = 0; i < msg->pose_size(); i++)
   {
     if (msg->pose(i).name() == "pioneer2dx")
@@ -33,6 +38,9 @@ void poseCallback(ConstPosesStampedPtr &msg)
         vY = (int)(msg->pose(i).position().y()*10);
 				w = msg->pose(i).orientation().w();
 				z = msg->pose(i).orientation().z();
+        myfile << msg->pose(i).position().x() << ",";
+        myfile << msg->pose(i).position().y() << std::endl;
+        myfile.close();
     }
   }
 }
@@ -90,9 +98,13 @@ int main(int argc, char* argv[]){
 
     // Publish to the robot vel_cmd topic
     gazebo::transport::PublisherPtr movementPublisher = node->Advertise<gazebo::msgs::Pose>("~/pioneer2dx/vel_cmd");
-
-    int gx = 40;
-  	int gy = 30;
+    //testworld: 35,0
+    //angleworld: 49,1
+    int gx = 35;
+  	int gy = 0;
+    std::ofstream myfile;
+    myfile.open(path_to_csv, std::ios::out | std::ios::app);
+    myfile << gx << "," << gy << std::endl;
 
     //float speed = 0.3f;
     //Ændre speed når vi skal dreje, jo skarpere jo lavere hastighed
