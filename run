@@ -6,7 +6,7 @@ bash gazebo_client.sh &
 sleep 1
 cd /home/magnus/robot_control/fuzzy_control/
 ./laserScan &
-sleep 5
+sleep 15
 konsole -e ./obstacle_avoidance &
 read cm
 pkill -9 -P $$

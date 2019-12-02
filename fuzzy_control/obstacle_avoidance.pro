@@ -7,5 +7,7 @@ SOURCES += obstacleavoidance.cpp
 
 CONFIG += link_pkgconfig
 PKGCONFIG += gazebo
-LIBS += -L/home/jacob/Desktop/fuzzylite-6.0/fuzzylite/release/bin -lfuzzylite-static
-INCLUDEPATH += "/home/jacob/Desktop/fuzzylite-6.0/fuzzylite"
+LIBS += -L/home/magnus/libraries/fuzzylite/fuzzylite/release/bin -lfuzzylite-static
+INCLUDEPATH += "/home/magnus/libraries/fuzzylite/fuzzylite"
+
+

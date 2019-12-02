@@ -10,6 +10,10 @@ using namespace std;
 
 double currentAngle;
 double currentDistance;
+int vX;
+int vY;
+double w;
+double z;
 
 // --------------- CALLBACKS --------------------------
 
@@ -19,7 +23,45 @@ void inputCallback(ConstVector2dPtr &msg)
   currentDistance = msg->y();
 }
 
+void poseCallback(ConstPosesStampedPtr &msg)
+{
+  for (int i = 0; i < msg->pose_size(); i++)
+  {
+    if (msg->pose(i).name() == "pioneer2dx")
+    {
+        vX = (int)(msg->pose(i).position().x()*10);
+        vY = (int)(msg->pose(i).position().y()*10);
+				w = msg->pose(i).orientation().w();
+				z = msg->pose(i).orientation().z();
+    }
+  }
+}
+
 // --------------- CALLBACKS --------------------------
+
+float calc_angle(float z, float w)
+{
+	if (z < 0)
+	{
+		return (2*M_PI - (2 * acos(w)));
+	}
+	else
+	{
+		return (2 * acos(w));
+	}
+}
+
+float calc_angle_to_point(float &cra, int goalx, int goaly)
+{ //Fucker helt op her, AP stikker af
+  //cout << "pX: " << p.x << endl;
+  //cout << "pX: " << vX << endl;
+  //cout << "pY: " << p.y << endl;
+  //cout << "pX: " << vY << endl;
+
+	float angle_to_point = atan2((goaly-vY), (goalx-vX));
+  //cout << "AP: " << angle_to_point << endl;
+	return (std::fmod((angle_to_point-cra + 3*M_PI), 2*M_PI)-M_PI);
+}
 
 int main(int argc, char* argv[]){
     using namespace fl;
@@ -31,6 +73,7 @@ int main(int argc, char* argv[]){
 
     InputVariable* obstacle = engine->getInputVariable("obstacle");
     InputVariable* distance = engine->getInputVariable("distance");
+    InputVariable* goal = engine->getInputVariable("goal");
     OutputVariable* steer = engine->getOutputVariable("mSteer");
     OutputVariable* speed = engine->getOutputVariable("mSpeed");
 
@@ -40,6 +83,7 @@ int main(int argc, char* argv[]){
     // Create our node for communication
     gazebo::transport::NodePtr node(new gazebo::transport::Node());
     node->Init();
+    gazebo::transport::SubscriberPtr poseSubscriber = node->Subscribe("~/pose/info", poseCallback);
 
     // Listen to Gazebo topics
     gazebo::transport::SubscriberPtr inputSubscriber = node->Subscribe("~/fuzzy_control/input", inputCallback);
@@ -47,16 +91,22 @@ int main(int argc, char* argv[]){
     // Publish to the robot vel_cmd topic
     gazebo::transport::PublisherPtr movementPublisher = node->Advertise<gazebo::msgs::Pose>("~/pioneer2dx/vel_cmd");
 
+    int gx = 40;
+  	int gy = 30;
+
     //float speed = 0.3f;
     //Ændre speed når vi skal dreje, jo skarpere jo lavere hastighed
     while(true){
       gazebo::common::Time::MSleep(10);
+      float cra = calc_angle(z, w);
+      float atp = calc_angle_to_point(cra, gx, gy)/M_PI;
 
       obstacle->setValue(currentAngle);
       distance->setValue(currentDistance);
+      goal->setValue(atp);
       engine->process();
 
-      FL_LOG("obstacle.input = " << Op::str(currentAngle) << " distance.input = " << Op::str(currentDistance) << " => " << "steer.output = " << Op::str(steer->getValue()));
+      FL_LOG("obstacle.input = " << Op::str(currentAngle) << " distance.input = " << Op::str(currentDistance) << " goal.input = " << Op::str(atp) << " => " << "steer.output = " << Op::str(steer->getValue()) << " => " << "speed.output = " << Op::str(speed->getValue()));
 
       // Generate a pose
       ignition::math::Pose3d pose(double(speed->getValue()), 0, 0, 0, 0, double(steer->getValue()));
