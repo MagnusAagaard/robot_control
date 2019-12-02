@@ -9,7 +9,7 @@
 
 using namespace std;
 
-const char* path_to_csv = "/home/magnus/testworldpath.csv";
+const char* path_to_csv = "/home/magnus/robot_control/fuzzy_control/tests/testworld/path.csv";
 
 double currentAngle;
 double currentDistance;
@@ -98,10 +98,10 @@ int main(int argc, char* argv[]){
 
     // Publish to the robot vel_cmd topic
     gazebo::transport::PublisherPtr movementPublisher = node->Advertise<gazebo::msgs::Pose>("~/pioneer2dx/vel_cmd");
-    //testworld: 35,0
+    //testworld: (20,30),(20,20),(20,10),(20,0),(20,-10),(20,-20), (40,20)
     //angleworld: 49,1
-    int gx = 35;
-  	int gy = 0;
+    int gx = 40;
+  	int gy = -20;
     std::ofstream myfile;
     myfile.open(path_to_csv, std::ios::out | std::ios::app);
     myfile << gx << "," << gy << std::endl;
