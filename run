@@ -1,6 +1,6 @@
 #!/bin/bash
 cd /home/magnus/project/rb-rca5/
-konsole -e bash gazebo_server.sh testworld.world &
+konsole -e bash gazebo_server.sh testworlddoor.world &
 sleep 1
 bash gazebo_client.sh &
 sleep 1
