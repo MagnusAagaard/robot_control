@@ -9,7 +9,6 @@ ParticleFilter::ParticleFilter()
 ParticleFilter::ParticleFilter(cv::Mat workspace)
 {
 	workspace.copyTo(_workspace);
-	//_workspace = workspace;
 }
 
 
@@ -41,12 +40,6 @@ void ParticleFilter::initParticles(cv::Point startP, double startOri, double sig
 	{
 		_particles[i].generateDistances(_workspace);
 	}
-
-	/*std::cout << "Init done: " << _particles.size() << std::endl;
-	for (int i = 0; i < _particles.size(); i++)
-	{
-		std::cout << _particles[i].x << ", " << _particles[i].y << std::endl;
-	}*/
 }
 
 void ParticleFilter::prediction(double dt, double sigma_pos[], double vlin, double vth)

@@ -31,9 +31,6 @@ float calc_angle(float z, float w)
 }
 
 void poseCallback(ConstPosesStampedPtr &_msg) {
-  // Dump the message contents to stdout.
-  //  std::cout << _msg->DebugString();
-
   for (int i = 0; i < _msg->pose_size(); i++) {
     if (_msg->pose(i).name() == "pioneer2dx") {
         robotX = (int)(_msg->pose(i).position().x()*10);
@@ -52,21 +49,16 @@ void cmdCallback(ConstPosePtr &msg)
 
 void lidarCallback(ConstLaserScanStampedPtr &msg) {
 
-  float angle_min = float(msg->scan().angle_min());
+  //float angle_min = float(msg->scan().angle_min());
   //  double angle_max = msg->scan().angle_max();
-  float angle_increment = float(msg->scan().angle_step());
+  //float angle_increment = float(msg->scan().angle_step());
 
-  float range_min = float(msg->scan().range_min());
   float range_max = float(msg->scan().range_max());
 
   int nranges = msg->scan().ranges_size();
-  int nintensities = msg->scan().intensities_size();
 
-  //assert(nranges == nintensities);
-  //std::cout << "Min: " << angle_min << std::endl;
-  //std::cout << "N: " << nranges << std::endl;
   for (int i = 0; i < nranges; i+=2) {
-    float angle = robotAngle*M_PI/180 + angle_min + i * angle_increment;
+    //float angle = robotAngle*M_PI/180 + angle_min + i * angle_increment;
     float range = std::min(float(msg->scan().ranges(i)), range_max)*10;
     ranges[i/2] = range;
         //std::cout << angle << " " << range << " " << std::endl;
@@ -97,12 +89,13 @@ int main(int _argc, char **_argv)
 
      double sigma_pos[3] = { 0.05*10, 0.05*10, 0.05 };
      double dt = 0.02;
-     //double initTheta = 0.0;
      gazebo::common::Time::MSleep(1000);
      ParticleFilter filter(workspace);
      //std::cout << "Init: " << robotAngle << std::endl;
      Point initPoint(robotX + workspace.cols/2, robotY + workspace.rows/2);
      filter.initParticles(initPoint, robotAngle*M_PI/180, sigma_pos, 50);
+
+     int runs = 0;
 
     while(true){
         gazebo::common::Time::MSleep(dt*1000);
@@ -111,6 +104,12 @@ int main(int _argc, char **_argv)
         filter.resample();
         filter.showParticles(workspace, robotX+workspace.cols/2, robotY+workspace.rows/2);
         //cout << "Pos: " << robotX + workspace.cols/2 << ", " << robotY+workspace.rows/2 << ". Angle: " << robotAngle << endl;
+        /*if(runs++ % 50 == 0)
+        {
+          std::ostringstream name;
+          name << "particlefilterstep" << runs << ".png";
+          cv::imwrite(name.str(), workspace);
+        }*/
     }
 
     gazebo::client::shutdown();

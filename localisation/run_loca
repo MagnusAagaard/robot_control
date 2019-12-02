@@ -4,13 +4,13 @@ konsole -e bash gazebo_server.sh smallworld.world &
 sleep 1
 bash gazebo_client.sh &
 sleep 1
-cd /home/magnus/robot_control/fuzzy_control/
-./laserScan &
-sleep 2
-konsole -e ./obstacle_avoidance &
+cd /home/magnus/project/rb-rca5/robot_control/
+./robot_control &
+cd /home/magnus/robot_control/localisation/
+./particlefilter &
 read cm
 pkill -9 -P $$
-pkill -9 -x laserScan
-pkill -9 -x obstacle_avoidance
+pkill -9 -x particlefilter
+pkill -9 -x robot_control
 pkill -9 -x gzclient
 pkill -9 -x run
