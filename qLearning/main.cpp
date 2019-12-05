@@ -1,3 +1,8 @@
+//
+// Created by August Mader on 29/11/2019.
+//
+
+#include <math.h>
 #include <random>
 #include <vector>
 #include <iostream>
@@ -7,16 +12,17 @@ using namespace std;
 
 #define ACTIONS 4
 
-// Environment -- spaces: agent can move, "+": reward, "-": punishment.
 /*
-#define ROWS 3
-#define COLUMNS 4
-char environment[ROWS][COLUMNS] = { { ' ', ' ', ' ', ' ' },
-                                    { ' ', '#', ' ', ' ' },
-                                    { ' ', '+', ' ', '+' } };
-
-*/
-
+#define ROWS 5
+#define COLUMNS 5
+char environment[ROWS][COLUMNS] = { {' ',' ',' ',' ',' '},
+                                    {' ','+',' ','#','+'},
+                                    {' ','#',' ','#',' '},
+                                    {' ','#',' ',' ',' '},
+                                    {'+','#',' ','+',' '},
+                                    };
+                                    */
+/*
 #define ROWS 21
 #define COLUMNS 24
 
@@ -41,18 +47,48 @@ char environment[ROWS][COLUMNS] = {
         {' ', ' ', ' ', '#', ' ', ' ', ' ', ' ', '#', ' ', ' ', ' ', ' ', ' ', '#', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
         {' ', ' ', ' ', '#', ' ', ' ', ' ', ' ', '#', ' ', '+', ' ', ' ', ' ', '#', ' ', ' ', '+', ' ', '#', ' ', ' ', ' ', ' '},
         {' ', ' ', ' ', '#', ' ', ' ', ' ', ' ', '#', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '#', ' ', ' ', ' ', ' '}
-};
+};*/
 
-/*char environment[ROWS][COLUMNS] = {{ ' ',' ','#','+','#',' ',' '},
-                                   { ' ',' ',' ',' ','#','+',' '},
+/*
+char environment[ROWS][COLUMNS] = {{ ' ',' ','#',' ','#',' ',' '},
+                                   { ' ',' ',' ',' ','#',' ',' '},
                                    { ' ','+','#',' ','#',' ',' '},
                                    { ' ','#','#',' ','#',' ',' '},
-                                   { '+',' ',' ',' ','#',' ','#'},
+                                   { ' ',' ',' ',' ','#',' ','#'},
                                    { '#','#','#',' ',' ',' ',' '},
                                    { ' ','+','#',' ','#','#','#'},
                                    { ' ','#','#',' ',' ',' ',' '},
-                                   { ' ',' ',' ','+','#',' ','+'}};
-                                   */
+                                   { ' ',' ',' ',' ','#',' ',' '}};*/
+
+#define ROWS 11
+#define COLUMNS 10
+
+char environment[ROWS][COLUMNS] = {
+        {'+',' ',' ','#',' ','#','#',' ','#',' '},
+        {'#','#',' ','#',' ','+','#',' ',' ',' '},
+        {'+',' ',' ','#',' ','#','#',' ','#','+'},
+        {'#','#',' ',' ',' ','+','#',' ','#',' '},
+        {' ',' ',' ','#',' ','#','#',' ','#',' '},
+        {' ',' ',' ',' ',' ',' ',' ',' ',' ',' '},
+        {' ','#',' ','#','#','#','#','#','#',' '},
+        {' ','#',' ','#','+',' ',' ',' ',' ',' '},
+        {' ','#',' ','#','#','#','#','#','#',' '},
+        {' ','#',' ','#','+','#','+',' ','#',' '},
+        {'+','#','+','#',' ',' ',' ',' ',' ',' '}
+};
+
+/*
+#define ROWS 5
+#define COLUMNS 6
+
+char environment[ROWS][COLUMNS] = {
+        {' ',' ',' ',' ',' ','+'},
+        {' ',' ',' ',' ','#',' '},
+        {' ','#',' ',' ','#',' '},
+        {' ','#','+',' ','#',' '},
+        {'+','#',' ',' ',' ',' '}
+};
+ */
 
 char environmentDefualt[ROWS][COLUMNS];
 
@@ -61,15 +97,14 @@ struct state {
     int col;
 };
 
-float discountRate = 0.9f;
+float discountRate = 0.99f;
 
-float theta = 0.01f;
-
-float learningRate = 0.4f;
+float theta = 0.0001f;
+float epsilon = 0.05f;
+float learningRate = 0.90f;
 
 int episodes;
-
-int maxEpisodes = 50000;
+int maxNumberOfQtables;
 
 int marblesPickedUp = 0;
 int numberOfMarbles = 0;
@@ -95,6 +130,7 @@ struct qtable {
     vector<vector<float>> qT;
     vector<state> goals;
     string goalsString;
+    float sum;
 };
 
 vector<qtable> qtables;
@@ -150,7 +186,7 @@ qtable initQtable(vector<state> _goals){
 
     string goalString = getGoalString(_goals);
 
-    qtable newQtable = {emptyQtable, _goals, goalString};
+    qtable newQtable = {emptyQtable, _goals, goalString, 0};
 
     // Add to qTable to vector
     qtables.push_back(newQtable);
@@ -205,18 +241,23 @@ action bestAction(state _state, qtable _qTable){
     return bestAction;
 }
 
+int randomActions = 0;
+int bestActions = 0;
 action getAction(state _state, qtable _qTable){
     random_device rd;
-    uniform_int_distribution<int> dist(0,maxEpisodes);
+    uniform_real_distribution<> dist(0, 1);
     uniform_int_distribution<int> distAction(0, ACTIONS - 1);
 
-    if (episodes * 0.7 < dist(rd)){
+    if (epsilon < dist(rd)){
+        randomActions++;
         return actions[distAction(rd)];
     }
 
+    bestActions++;
     return bestAction(_state, _qTable);
 }
 
+// Bottleneck
 void saveQtable(qtable _qTable){
     // Save qtable
     for (int k = 0; k < qtables.size(); k++) {
@@ -246,7 +287,7 @@ qtable changeQtable(state _state, qtable _qTable){
 
             goalString = getGoalString(newGoals);
 
-            // Led efter det corresponding qTable
+            // Led efter det corresponding qTable - Bottleneck
             for (int j = 0; j < qtables.size(); j++) {
                 if (goalString == getGoalString(qtables[j].goals))
                     return qtables[j];
@@ -257,14 +298,6 @@ qtable changeQtable(state _state, qtable _qTable){
 }
 
 float getMaxQalueAtState(state _state, qtable _qTable){
-    /*if(getStateID(_state) == 27){
-        cout << "hej" << endl;
-        int a = _state.row;
-        int b = _state.col;
-
-        cout << "hej<" << endl;
-    }*/
-
     if (_state.row < 0 || _state.col < 0 || _state.row >= ROWS || _state.col >= COLUMNS)
         return 0;
 
@@ -392,21 +425,38 @@ state randomStartingPosition(){
     return stateStart;
 }
 
+float sumOfQtables(){
+    float sums = 0;
+    for (int i = 0; i < qtables.size(); i++) {
+        sums += qtables[i].sum;
+    }
+    return sums;
+}
+
 void train(){
 
     episodes = 0;
+    int counter = 0;
+
+    maxNumberOfQtables = (int) pow(2,numberOfMarbles) - 1;
+
+    float preSum, newSum = 0.0f;
 
     state _state, nextState;
     action _action;
     int stateID;
-    float reward, maxQvalueAtState, qValue;
+    float reward, maxQvalueAtState, qValue, delta = 1, preQvalue;
 
     qtable qTable, qtStart, newQtable;
 
     initQtable(findGoals());
 
-    while (episodes < maxEpisodes){
+    cout << "numberOfMarbles " << numberOfMarbles << endl;
+
+    do {
         marblesPickedUp = 0;
+
+        preSum = newSum;
 
         resetEnvironment();
 
@@ -417,7 +467,7 @@ void train(){
 
         ++episodes;
 
-        while(marblesPickedUp < numberOfMarbles){
+        while (marblesPickedUp < numberOfMarbles){
 
             _action = getAction(_state, qTable);
 
@@ -429,10 +479,13 @@ void train(){
 
             reward = getReward(nextState);
 
-            qValue = (1 - learningRate) * qTable.qT[stateID][_action]
-                     + learningRate * (reward + discountRate * maxQvalueAtState);
+            preQvalue = qTable.qT[stateID][_action];
+
+            qValue = (1 - learningRate) * preQvalue + learningRate * (reward + discountRate * maxQvalueAtState);
 
             qTable.qT[stateID][_action] = qValue;
+
+            qTable.sum = preQvalue - qValue;
 
             // Check if a goal is found
             if (0 <= reward && environment[nextState.row][nextState.col] == '+'){
@@ -459,8 +512,20 @@ void train(){
                 _state = randomStartingPosition();
         }
 
-        cout << "Episodes: " << episodes << endl;
-    }
+        if (qtables.size() == maxNumberOfQtables){
+            newSum = sumOfQtables();
+            delta = fabs(preSum - newSum);
+        }
+
+
+        cout << "Episodes: " << episodes << " delta: " << delta << " number of qtables " << qtables.size() << endl;
+
+        if (delta < theta)
+            counter++;
+        else
+            counter = 0;
+
+    } while (counter < 10);
 
     cout << "All qtables" << endl;
     printQtables();
@@ -487,27 +552,28 @@ void getBestPath(state _state){
     action _action;
     string goalString;
 
+    string b = to_string(getStateID(_state));
+
     marblesPickedUp = 0;
 
     bestPath.push_back(_state);
 
     resetEnvironment();
 
-    int i = 0;
-
     while(marblesPickedUp < numberOfMarbles){
-        i++;
         _action = bestAction(_state, _qTable);
         _state = getNextState(_state, _action);
+        b = to_string(getStateID(_state));
         cout << "Taking ";
         printActionSym(_action);
-        cout << " and going to state " << to_string(getStateID(_state)) << endl;
+        cout << " and going to state " << b << endl;
         bestPath.push_back(_state);
         if(environment[_state.row][_state.col] == '+'){
             cout << "goal found" << endl;
             marblesPickedUp++;
             environment[_state.row][_state.col] = ' ';
-            _qTable = changeQtable(_state, _qTable);
+            if(marblesPickedUp < numberOfMarbles)
+                _qTable = changeQtable(_state, _qTable);
         }
     }
 
@@ -515,8 +581,7 @@ void getBestPath(state _state){
         cout << to_string(getStateID(bestPath[i])) << " ";
     }
     cout << endl;
-
-    cout << "Size of qTables " << qtables.size() << endl;
+    cout << "Number of steps " << bestPath.size() - 1 << endl;
 }
 
 void initEnv(){
@@ -538,9 +603,11 @@ int main() {
 
     train();
 
-    state startState = {0, 0};
-    getBestPath(startState);
+    cout << "Random Actions " << randomActions << endl;
+    cout << "BestActions " << bestActions << endl;
 
+    state startState = {5, 5};
+    getBestPath(startState);
     std::cout << "Hello, World!" << std::endl;
     return 0;
 }

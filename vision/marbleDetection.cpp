@@ -37,27 +37,71 @@ void cannyThreshold(){
 }
 
 void imageProcessing(){
+    im = img.clone();
+
     // Converting image to grayscale
-    cv::cvtColor(img, img, COLOR_BGR2GRAY);
+    cvtColor(img, img, COLOR_BGR2GRAY);
+
+    string window_name = "Greyscale";
+    imwrite("../" + window_name + ".png", img);
+    //namedWindow( window_name , WINDOW_AUTOSIZE);
+    //imshow(window_name, img);
+
+    Mat dis;
+    int sigma = 200;
+    bilateralFilter(img, dis, 8, sigma, sigma);
+    img = dis.clone();
+
+    //blur(img, img, Size(6,6));
+
+    window_name = "FrameWithBilateralFilter";
+    //imwrite("../" + window_name + ".png", img);
+    namedWindow( window_name , WINDOW_AUTOSIZE);
+    imshow(window_name, img);
+
+
+    //equalizeHist(img, img);
+    //imwrite("../equal.png", img);
 
     // Applying a GaussianBlur to reduce noise and avoid false circle detection
-    //GaussianBlur( img, img, Size(9, 9), 1, 1);
+    //GaussianBlur( img, img, Size(9, 9), 3, 3);
 
     // Applying a medianBlur and egde detection to reduce noise and avoid false circle detection
-    medianBlur(img, img, 7);
+    //medianBlur(img, img, 7);
 
     //showHistogram(img);
 
-    int thresholdValueBin = 87;
+    int thresholdValueLow = 92;
+    //int thresholdValueHigh = 150;
+
+    //threshold(img, img, thresholdValueBin, 255, cv::THRESH_BINARY_INV);
+
+    threshold( img, img, thresholdValueLow, 255, THRESH_BINARY );
+    //threshold( img, binary_image2, thresholdValueHigh, 255, THRESH_BINARY_INV );
+    //bitwise_and( binary_image1, binary_image2, img );
+
+    //threshold( img, img, thresholdValueBin, 255, THRESH_BINARY );
+    //bitwise_and( img, img, semi_thresholded_image );
 
     // Binary Vision to only detect the marble
-    threshold(img, img, thresholdValueBin, 255, THRESH_BINARY);
+    //threshold(img, img, thresholdValueBin, 255, THRESH_BINARY);
+
+    window_name = "Binary";
+    namedWindow( window_name , WINDOW_AUTOSIZE);
+    imwrite("../" + window_name + ".png", img);
+    imshow(window_name, img);
 
     // Morphology
-    erode(img, img, Mat());
+    //erode(img, img, Mat());
+
+    //window_name = "Erode";
+    //namedWindow( window_name , WINDOW_AUTOSIZE);
+    //imwrite("../" + window_name + ".png", img);
+    //imshow(window_name, img);
 
     // Egde detection
     cannyThreshold();
+
 }
 
 // Constructing a vector to store the information of the marbles positions
